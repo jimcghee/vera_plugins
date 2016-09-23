@@ -40,13 +40,13 @@ end
 
 ------------------------------------------------------------
 local function sendCommand(command)
-  if luup.io.write(command)==false then
-      log("cannot send: " .. tostring(command),1)
-      luup.set_failure(true)
-      return false
-  else
-      return true
-  end
+if luup.io.write(command)==false then
+    log("cannot send: " .. tostring(command),1)
+    luup.set_failure(true)
+    return false
+else
+    return true
+end
 end
 
 ------------------------------------------------------------
@@ -62,9 +62,9 @@ local function split_deliminated_string(s,sep)
       local nexti = string.find(s, sep, fieldstart)
       table.insert(t, string.sub(s, fieldstart, nexti-1))
       fieldstart = nexti + 1
-      until fieldstart > string.len(s)
-          return t
-      end
+  until fieldstart > string.len(s)
+  return t
+  end
 ------------------------------------------------------------
 -- converts a security address to bcd
 local function convertBCD(addr)
@@ -72,27 +72,27 @@ local function convertBCD(addr)
     local t = split_deliminated_string(data ,':')
 
     if (t == nil) then
-      return 0
-  end
-  local value1 = tonumber(t[1], 16)
-  local value2 = 0
-  if t[2] ~= nil then
-     value2 = tonumber(t[2], 16)*256
- end
- local value3 = value1+value2
- local bcd = ""
- local fieldstart = 1
- repeat
-  local nextb = string.sub(value3, fieldstart, fieldstart)
-  nextb = nextb + 3
-  if nextb >9 then
-    nextb = nextb - 10
-end
-bcd = bcd..nextb
-fieldstart = fieldstart + 1
-until fieldstart > string.len(value3)  or fieldstart > 5
-  if fieldstart == 5 then
-        bcd = "3"..bcd  -- must be a five digit security code
+        return 0
+    end
+    local value1 = tonumber(t[1], 16)
+    local value2 = 0
+    if t[2] ~= nil then
+       value2 = tonumber(t[2], 16)*256
+    end
+    local value3 = value1+value2
+    local bcd = ""
+    local fieldstart = 1
+    repeat
+      local nextb = string.sub(value3, fieldstart, fieldstart)
+      nextb = nextb + 3
+      if nextb >9 then
+        nextb = nextb - 10
+      end
+      bcd = bcd..nextb
+      fieldstart = fieldstart + 1
+    until fieldstart > string.len(value3)  or fieldstart > 5
+    if fieldstart == 5 then
+      bcd = "3"..bcd  -- must be a five digit security code
     end
     return bcd
 end
@@ -156,6 +156,9 @@ end
 ------------------------------------------------------------
 function startup(lul_device)
 
+    -- Needed for UI7
+    luup.set_failure(false)
+
     ------------------------------------------------------------
     -- Open Connection to Mochad
     ------------------------------------------------------------
@@ -202,7 +205,7 @@ function startup(lul_device)
         luup.variable_set(MOCHAD_SID, "MotionSensors",      "",	lul_device)
         luup.variable_set(MOCHAD_SID, "RFSecMotionSensors", "",	lul_device)
         luup.variable_set(MOCHAD_SID, "RFSecDoorSensors",   "",	lul_device)
-        luup.variable_set(MOCHAD_SID, "RFSecRemote",   "076300",	lul_device)
+        luup.variable_set(MOCHAD_SID, "RFSecRemote",   "076300", lul_device)
     end
 
     power_line_command = luup.variable_get(MOCHAD_SID, "PowerLineCommand", lul_device)
@@ -395,14 +398,15 @@ local function rxsec_incoming_data(addr, new_state)
     local altit
 --    local bcdaddr = convertBCD(addr)
     local bcdaddr = addr
+
     -- Handle RFSec Motion Sensors:
     if ( is_type(bcdaddr, "RFSecMotionSensors") ) then
         altid = 'R-' .. bcdaddr
         if (new_state == "Motion_alert_MS10A") then
             trip = '1'
-            elseif (new_state == "Motion_normal_MS10A") then
-                trip = '0'
-            end
+        elseif (new_state == "Motion_normal_MS10A") then
+            trip = '0'
+        end
 
     -- Handle RFSec Door Sensors:
     elseif (is_type(bcdaddr, "RFSecDoorSensors") ) then
@@ -447,12 +451,12 @@ function incoming(lul_data)
         return
     end
 
--- 08/28 23:35:35 Rx RFSEC Addr: FC:8A:80 Func: Motion_normal_MS10A
     local rx_tx     = t[3]
     local rx_type   = t[4]
     local addr      = t[6]
     local new_state = t[8]
     local addr_found = false
+--    log('Jim '..rx_tx, 50)
     if (rx_tx == 'Rx') then
         -- Check to see if it is an RFSEC device:
         if (rx_type == 'RFSEC') then
@@ -510,3 +514,4 @@ function incoming(lul_data)
         end
     end
 end
+
